@@ -35,7 +35,9 @@ int login_func(char input[100], int pipe[2]) {
 	char line[100];
 	bool found = false;
 	while (fgets(line, sizeof(line), fd)) {
-		if (strcmp(input + strlen("login:"), line) == 0) {
+		if (line[strlen(line) - 1] == '\n')
+			line[strlen(line) - 1] = '\0';
+		if (strcmp(input + strlen("login:"), line) == 0 || strcmp(input + strlen("login:"), line - 1) == 0) {
 			close(pipe[READ]);
 			write(pipe[WRITE], "7:success", strlen("7:success"));
 
@@ -140,7 +142,6 @@ int child_info_func(char* input, const char* fifo_name) {
 	write(file, buffer, sz);
 
 	close(file);
-	console_log("Stat results:\n");
 	return 1;
 }
 
@@ -156,7 +157,13 @@ bool is_dir(char* path) {
 }
 
 int get_info_func(char* input) {
-	printf("Stat function called with arg %s\n", input);
+	if (memcmp(input, "mystat", 6) != 0) {
+		char tmp[PATH_MAX];
+		sprintf(tmp, "%s", input);
+		sprintf(input, "mystat %s", tmp);
+	}
+
+	//printf("Stat function called with arg %s\n",input);
 
 	char path[100];
 	if (getcwd(path, sizeof(path)) == NULL) {
@@ -205,6 +212,9 @@ int get_info_func(char* input) {
 			printf("%s\n", size.newStart);
 		}
 
+		char c;
+		while (0 != read(file, &c, 1));
+
 		close(file);
 
 		return 1;
@@ -230,11 +240,7 @@ int search_in_dir(char *path, char* goal)
 		int len = strlen(goal + strlen("mystat "));
 		if (strcmp(path + strlen(path) - len, goal + strlen("mystat ")) == 0 && path[strlen(path) - len - 1] == '/')
 		{
-			char new_path[PATH_MAX];
-			strcat(new_path, "mystat ");
-			strcat(new_path + strlen(new_path), path);
-
-			int res = get_info_func(new_path);
+			int res = get_info_func(path);
 			if (res != 1)
 				return -1;
 			return 1;
@@ -303,7 +309,7 @@ int call_find_func(char* input) {
 	return 0;
 }
 
-int main()
+int main(int argc, char*argv[])
 {
 	char input[100];
 
@@ -361,6 +367,7 @@ int main()
 			int res = get_info_func(input);
 			if (res <= 0)
 				return res;
+			execl(argv[0], argv[0], "2", NULL);
 		}
 		else if (PARSE_CONDITION("cwd")) {
 			char path[100];
