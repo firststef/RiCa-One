@@ -178,7 +178,7 @@ int main( )
             }
         }
         else if (PARSE_CONDITION("mystat ")){
-            char path[PATH_MAX];
+            char path[100] = "/home/first/Desktop/RiCa-One";
             if (getcwd(path, sizeof(path)) == NULL) {
                 error_log("getcwd error");
                 return -1;
@@ -187,7 +187,7 @@ int main( )
             char* fifo_name = "fisier.txt";
             strcat(path + strlen(path), "/");
             strcat(path + strlen(path), fifo_name);
-            printf("%s",path);
+            printf("%s\n",path);
 
             if (-1 == mkfifo(path, 0777)){
                 error_log("Could not create fifo");
